@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.7.3">Jekyll</generator><link href="https://jahernandez.github.io//feed.xml" rel="self" type="application/atom+xml" /><link href="https://jahernandez.github.io//" rel="alternate" type="text/html" /><updated>2018-04-02T01:23:20+02:00</updated><id>https://jahernandez.github.io//</id><title type="html">José Alberto Hernández</title><subtitle>Mi blog personal donde poder plasmar mis experiencias profesionales y tecnológicas</subtitle><author><name>José Alberto Hernández</name></author><entry><title type="html">Cómo crear un proyecto Scala con Maven</title><link href="https://jahernandez.github.io//2018/04/02/como-crear-un-proyecto-scala-con-maven/" rel="alternate" type="text/html" title="Cómo crear un proyecto Scala con Maven" /><published>2018-04-02T00:00:00+02:00</published><updated>2018-04-02T00:00:00+02:00</updated><id>https://jahernandez.github.io//2018/04/02/como-crear-un-proyecto-scala-con-maven</id><content type="html" xml:base="https://jahernandez.github.io//2018/04/02/como-crear-un-proyecto-scala-con-maven/">&lt;p&gt;En esta entrada voy a describir paso a paso como crear un proyecto para código Scala utilizando el gestor de dependencias Maven y partiendo del arquetipo indicado por la documentación oficial.&lt;/p&gt;
+
+&lt;p&gt;Para la elaboración de esta guía se han empleado las versiones de las siguientes tecnologías:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Java 1.8&lt;/li&gt;
+  &lt;li&gt;Maven 3.5.3&lt;/li&gt;
+  &lt;li&gt;Scala 2.11.12&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;generación-del-proyecto&quot;&gt;Generación del proyecto&lt;/h1&gt;
+
+&lt;p&gt;Para generar la estructura básica del proyecto vamos a utilizar el arquetipo que proporciona el plugin para Maven de Scala. Un arquetipo no es más que una plantilla parametrizada con una estructura de proyecto predefinida. Indicaremos la última versión disponible hasta la fecha.&lt;/p&gt;
+
+&lt;p&gt;Para crear el proyecto a partir del arquetipo ejecutaremos:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;mvn archetype:generate &lt;span class=&quot;nt&quot;&gt;-B&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-DarchetypeGroupId&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;net.alchim31.maven &lt;span class=&quot;nt&quot;&gt;-DarchetypeArtifactId&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;scala-archetype-simple &lt;span class=&quot;nt&quot;&gt;-DarchetypeVersion&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;1.6 &lt;span class=&quot;nt&quot;&gt;-DgroupId&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;com.josealbertohdez &lt;span class=&quot;nt&quot;&gt;-DartifactId&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;scala-maven-project-example &lt;span class=&quot;nt&quot;&gt;-Dversion&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;1.0.0-SNAPSHOT
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;donde los argumentos &lt;code class=&quot;highlighter-rouge&quot;&gt;groupId&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;artifactId&lt;/code&gt; y &lt;code class=&quot;highlighter-rouge&quot;&gt;version&lt;/code&gt; son los correspondientes a nuestro proyecto.&lt;/p&gt;
+
+&lt;p&gt;Una vez generado podemos ver que nos ha generado una estructura como ésta:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;scala-maven-project-example/
+├── pom.xml
+└── src
+    ├── main
+    │   └── scala
+    │       └── com
+    │           └── josealbertohdez
+    │               └── App.scala
+    └── test
+        └── scala
+            └── samples
+                ├── junit.scala
+                ├── scalatest.scala
+                └── specs.scala
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h1 id=&quot;configuración-del-proyecto-generado&quot;&gt;Configuración del proyecto generado&lt;/h1&gt;
+
+&lt;p&gt;A continuación tenemos que realizar una serie de modificaciones en el &lt;code class=&quot;highlighter-rouge&quot;&gt;pom.xml&lt;/code&gt; del proyecto.&lt;/p&gt;
+
+&lt;p&gt;Por un lado, hay que cambiar la versión de Java a la 1.8 de las propiedades &lt;code class=&quot;highlighter-rouge&quot;&gt;maven.compiler.source&lt;/code&gt; y &lt;code class=&quot;highlighter-rouge&quot;&gt;maven.compiler.target&lt;/code&gt;. A fecha de este artículo, todavía Scala no es compatible con Java 9.&lt;/p&gt;
+
+&lt;p&gt;Por otro lado, la versión de Scala que vamos a usar en el proyecto, que en este caso he especificado la última versión de la 2.11.&lt;/p&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;properties&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;maven.compiler.source&amp;gt;&lt;/span&gt;1.8&lt;span class=&quot;nt&quot;&gt;&amp;lt;/maven.compiler.source&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;maven.compiler.target&amp;gt;&lt;/span&gt;1.8&lt;span class=&quot;nt&quot;&gt;&amp;lt;/maven.compiler.target&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;encoding&amp;gt;&lt;/span&gt;UTF-8&lt;span class=&quot;nt&quot;&gt;&amp;lt;/encoding&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;scala.version&amp;gt;&lt;/span&gt;2.11.12&lt;span class=&quot;nt&quot;&gt;&amp;lt;/scala.version&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;scala.compat.version&amp;gt;&lt;/span&gt;2.11&lt;span class=&quot;nt&quot;&gt;&amp;lt;/scala.compat.version&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/properties&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;En cuanto a la versión del plugin &lt;code class=&quot;highlighter-rouge&quot;&gt;scala-maven-plugin&lt;/code&gt; conviene indicar la última versión estable publicada en su &lt;a href=&quot;https://davidb.github.com/scala-maven-plugin&quot;&gt;página&lt;/a&gt; que en este caso es la 3.3.2. También de su sección de configuración hay que eliminar la siguiente línea ya que si no, no compilará:&lt;/p&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;arg&amp;gt;&lt;/span&gt;-make:transitive&lt;span class=&quot;nt&quot;&gt;&amp;lt;/arg&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Después hay que incluir la siguiente dependencia para que compilen los tests:&lt;/p&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;dependency&amp;gt;&lt;/span&gt;
+	&lt;span class=&quot;nt&quot;&gt;&amp;lt;groupId&amp;gt;&lt;/span&gt;org.specs2&lt;span class=&quot;nt&quot;&gt;&amp;lt;/groupId&amp;gt;&lt;/span&gt;
+	&lt;span class=&quot;nt&quot;&gt;&amp;lt;artifactId&amp;gt;&lt;/span&gt;specs2-junit_${scala.compat.version}&lt;span class=&quot;nt&quot;&gt;&amp;lt;/artifactId&amp;gt;&lt;/span&gt;
+	&lt;span class=&quot;nt&quot;&gt;&amp;lt;version&amp;gt;&lt;/span&gt;2.4.16&lt;span class=&quot;nt&quot;&gt;&amp;lt;/version&amp;gt;&lt;/span&gt;
+	&lt;span class=&quot;nt&quot;&gt;&amp;lt;scope&amp;gt;&lt;/span&gt;test&lt;span class=&quot;nt&quot;&gt;&amp;lt;/scope&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/dependency&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Por último, solo queda ejecutar el siguiente comando para compilar y ejecutar los test a partir del cual empezaremos nuestro proyecto en Scala:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;mvn package
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h1 id=&quot;notas-finales&quot;&gt;Notas finales&lt;/h1&gt;
+
+&lt;p&gt;En esta entrada hemos visto como crear la estructura de un proyecto Scala con Maven a partir del arquetipo oficial. A pesar de ello, no está muy pulida y hay que modificar algunos aspectos del &lt;code class=&quot;highlighter-rouge&quot;&gt;pom.xml&lt;/code&gt; para que el proyecto compile y ejecute los tests.&lt;/p&gt;
+
+&lt;p&gt;Asimismo, este arquetipo sólo crea proyectos con estructura simple. Si queremos crear uno multimódulo una opción es utilizarlo para crear cada uno de los módulos que vayan a ser proyecto Scala. Después crearemos el proyecto padre y unificaremos las definiciones repetidas y comunes en este proyecto.&lt;/p&gt;
+
+&lt;p&gt;El código fuente final se encuentra disponible en &lt;a href=&quot;https://github.com/jahernandez/scala-maven-project-example&quot;&gt;GitHub&lt;/a&gt;.&lt;/p&gt;</content><author><name>José Alberto Hernández</name></author><category term="scala" /><category term="maven" /><summary type="html">En esta entrada voy a describir paso a paso como crear un proyecto para código Scala utilizando el gestor de dependencias Maven y partiendo del arquetipo indicado por la documentación oficial. Para la elaboración de esta guía se han empleado las versiones de las siguientes tecnologías: Java 1.8 Maven 3.5.3 Scala 2.11.12 Generación del proyecto Para generar la estructura básica del proyecto vamos a utilizar el arquetipo que proporciona el plugin para Maven de Scala. Un arquetipo no es más que una plantilla parametrizada con una estructura de proyecto predefinida. Indicaremos la última versión disponible hasta la fecha.</summary></entry></feed>
