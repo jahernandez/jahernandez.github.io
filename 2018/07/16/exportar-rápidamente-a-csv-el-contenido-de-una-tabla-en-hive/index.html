@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-116852626-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'UA-116852626-1');
+</script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="author" content="José Alberto Hernández">
+<meta name="description" content="Describe las diferentes opciones que tenemos para exportar a CSV cierta información de una tabla en Hive">
+<title> Exportar rápidamente a CSV el contenido de una tabla en Hive › José Alberto Hernández</title>
+<link rel="canonical" href="https://jahernandez.github.io//2018/07/16/exportar-r%C3%A1pidamente-a-csv-el-contenido-de-una-tabla-en-hive/">
+<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,300italic,400italic" rel="stylesheet">
+<link href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+<link href="/basic.css" rel="stylesheet">
+<link href="/highlight.css" rel="stylesheet">
+<link href="/index.css" rel="stylesheet">
+<link type="application/atom+xml" rel="alternate" href="https://jahernandez.github.io//feed.xml" title="José Alberto Hernández" />
+
+
+<header>
+  <h1><a href="">José Alberto Hernández</a></h1>
+  <nav>
+    <div><a href="/">Home</a><a href="/archive/">Archive</a></div>
+    <div><a href="https://twitter.com/josealberto___/"><i class="fa fa-twitter"></i></a><a href="https://github.com/jahernandez"><i class="fa fa-github"></i></a></div>
+  </nav>
+</header>
+<main>
+  <article>
+    <header>
+      <h1><a href="/2018/07/16/exportar-r%C3%A1pidamente-a-csv-el-contenido-de-una-tabla-en-hive/">Exportar rápidamente a CSV el contenido de una tabla en Hive</a></h1>
+      <time datetime="2018-07-16T00:00:00+02:00">July 16, 2018</time>
+    </header>
+<p>En diversas ocasiones necesitamos exportar a CSV el resultado de una consulta sobre una tabla en Hive. Aunque lo habitual es ir al interfaz web de Hive de la distribución que estemos usando, realizar la consulta y exportar los resultados a CSV, también podemos hacerlo vía shell.</p>
+
+<p>Como tabla en Hive vamos a crear una que va a contener el padrón municipal de habitantes de la ciudad de Madrid de Junio de 2018 en formato CSV <a href="https://datos.madrid.es/egob/catalogo/209163-112-padron-municipal-historico.csv">link</a>:</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">CREATE</span> <span class="k">EXTERNAL</span> <span class="k">TABLE</span> <span class="n">padron_municipal_madrid_raw</span> <span class="p">(</span>
+  <span class="n">cod_distrito</span> <span class="n">string</span><span class="p">,</span>
+  <span class="n">desc_distrito</span> <span class="n">string</span><span class="p">,</span>
+  <span class="n">cod_dist_barrio</span> <span class="n">string</span><span class="p">,</span>
+  <span class="n">desc_barrio</span> <span class="n">string</span><span class="p">,</span>
+  <span class="n">cod_barrio</span> <span class="n">string</span><span class="p">,</span>
+  <span class="n">cod_dist_seccion</span> <span class="n">string</span><span class="p">,</span>
+  <span class="n">cod_seccion</span> <span class="n">string</span><span class="p">,</span>
+  <span class="n">cod_edad_int</span> <span class="n">string</span><span class="p">,</span>
+  <span class="n">espanoleshombres</span> <span class="n">string</span><span class="p">,</span>
+  <span class="n">espanolesmujeres</span> <span class="n">string</span><span class="p">,</span>
+  <span class="n">extranjeroshombres</span> <span class="n">string</span><span class="p">,</span>
+  <span class="n">extranjerosmujeres</span> <span class="n">string</span><span class="p">)</span>
+<span class="n">PARTITIONED</span> <span class="k">BY</span> <span class="p">(</span>
+  <span class="n">fecha</span> <span class="n">string</span><span class="p">)</span>
+<span class="k">ROW</span> <span class="n">FORMAT</span> <span class="n">SERDE</span>
+  <span class="s1">'org.apache.hadoop.hive.serde2.OpenCSVSerde'</span>
+<span class="k">WITH</span> <span class="n">SERDEPROPERTIES</span> <span class="p">(</span>
+  <span class="s1">'quoteChar'</span><span class="o">=</span><span class="s1">'</span><span class="se">\"</span><span class="s1">'</span><span class="p">,</span>
+  <span class="s1">'separatorChar'</span><span class="o">=</span><span class="s1">'</span><span class="se">\;</span><span class="s1">'</span><span class="p">)</span>
+<span class="n">STORED</span> <span class="k">AS</span> <span class="n">TEXTFILE</span>
+<span class="n">TBLPROPERTIES</span> <span class="p">(</span>
+  <span class="s1">'skip.header.line.count'</span><span class="o">=</span><span class="s1">'1'</span>
+<span class="p">);</span>
+</code></pre></div></div>
+
+<p>Creamos la partición y subimos a HDFS el fichero descargado con el padrón.</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">ALTER</span> <span class="k">TABLE</span> <span class="n">padron_municipal_madrid_raw</span> <span class="k">ADD</span> <span class="n">PARTITION</span><span class="p">(</span><span class="n">fecha</span><span class="o">=</span><span class="s1">'2018-06-01'</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>Nos creamos la tabla final a partir de la que realizaremos la extracción:</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">CREATE</span> <span class="k">EXTERNAL</span> <span class="k">TABLE</span> <span class="n">padron_municipal_madrid</span> <span class="p">(</span>
+  <span class="n">cod_distrito</span> <span class="n">string</span><span class="p">,</span>
+  <span class="n">desc_distrito</span> <span class="n">string</span><span class="p">,</span>
+  <span class="n">cod_dist_barrio</span> <span class="n">string</span><span class="p">,</span>
+  <span class="n">desc_barrio</span> <span class="n">string</span><span class="p">,</span>
+  <span class="n">cod_barrio</span> <span class="n">string</span><span class="p">,</span>
+  <span class="n">cod_dist_seccion</span> <span class="n">string</span><span class="p">,</span>
+  <span class="n">cod_seccion</span> <span class="n">string</span><span class="p">,</span>
+  <span class="n">cod_edad_int</span> <span class="n">int</span><span class="p">,</span>
+  <span class="n">espanoleshombres</span> <span class="n">int</span><span class="p">,</span>
+  <span class="n">espanolesmujeres</span> <span class="n">int</span><span class="p">,</span>
+  <span class="n">extranjeroshombres</span> <span class="n">int</span><span class="p">,</span>
+  <span class="n">extranjerosmujeres</span> <span class="n">int</span><span class="p">)</span>
+<span class="n">PARTITIONED</span> <span class="k">BY</span> <span class="p">(</span>
+  <span class="n">fecha</span> <span class="n">string</span><span class="p">)</span>
+<span class="n">STORED</span> <span class="k">AS</span> <span class="n">PARQUET</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>La rellenamos con datos creando la partición por fecha automáticamente:</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">SET</span> <span class="n">hive</span><span class="p">.</span><span class="k">exec</span><span class="p">.</span><span class="k">dynamic</span><span class="p">.</span><span class="n">partition</span><span class="p">.</span><span class="k">mode</span><span class="o">=</span><span class="n">nonstrict</span><span class="p">;</span>
+<span class="k">INSERT</span> <span class="n">OVERWRITE</span> <span class="k">table</span> <span class="n">padron_municipal_madrid</span> <span class="n">PARTITION</span><span class="p">(</span><span class="n">fecha</span><span class="p">)</span> <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">padron_municipal_madrid_raw</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>Nos creamos un fichero <code class="highlighter-rouge">query.hql</code> donde incluiremos la consulta a realizar, la cual obtiene el número total de mujeres y hombres segmentado por distrito.</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">SELECT</span> <span class="k">TRIM</span><span class="p">(</span><span class="n">desc_distrito</span><span class="p">)</span> <span class="k">as</span> <span class="n">distrito</span><span class="p">,</span> <span class="k">CAST</span><span class="p">(</span><span class="k">SUM</span><span class="p">(</span><span class="n">espanoleshombres</span> <span class="o">+</span> <span class="n">espanolesmujeres</span> <span class="o">+</span> <span class="n">extranjeroshombres</span> <span class="o">+</span> <span class="n">extranjerosmujeres</span><span class="p">)</span> <span class="k">AS</span> <span class="n">INT</span><span class="p">)</span> <span class="k">AS</span> <span class="n">total</span> <span class="k">FROM</span> <span class="n">padron_municipal_madrid</span> <span class="k">where</span> <span class="n">fecha</span> <span class="o">=</span> <span class="s1">'2018-06-01'</span> <span class="k">group</span> <span class="k">by</span> <span class="n">cod_distrito</span><span class="p">,</span> <span class="n">desc_distrito</span> <span class="k">order</span> <span class="k">by</span> <span class="n">distrito</span><span class="p">;</span> 
+</code></pre></div></div>
+<h2 id="exportación-a-csv-a-través-de-beeline">Exportación a CSV a través de Beeline</h2>
+
+<p>Llegados a este punto podemos generar un fichero en formato CSV con el resultado de la consulta anterior:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>beeline <span class="nt">-u</span> jdbc:hive2://localhost:10000 <span class="nt">--showHeader</span><span class="o">=</span><span class="nb">true</span> <span class="nt">--outputformat</span><span class="o">=</span>csv2 <span class="nt">--silent</span><span class="o">=</span><span class="nb">true</span> <span class="nt">-f</span> query.sql <span class="o">&gt;</span> informe.csv
+</code></pre></div></div>
+
+<p>Resultando el siguiente contenido:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>distrito,total
+ARGANZUELA,52543
+BARAJAS,17904
+CARABANCHEL,133187
+CENTRO,76960
+CHAMARTIN,44841
+CHAMBERI,43955
+CIUDAD LINEAL,84392
+FUENCARRAL-EL PARDO,68838
+HORTALEZA,74133
+LATINA,93766
+MONCLOA-ARAVACA,39910
+MORATALAZ,20071
+PUENTE DE VALLECAS,111632
+RETIRO,25414
+SALAMANCA,49777
+SAN BLAS-CANILLEJAS,58174
+TETUAN,83243
+USERA,82236
+VICALVARO,27959
+VILLA DE VALLECAS,53475
+VILLAVERDE,80333
+</code></pre></div></div>
+
+<h2 id="exportación-a-csv-via-impala-shell">Exportación a CSV via impala-shell</h2>
+
+<p>Si estamos utilizando la distribución de Cloudera, podemos además utilizar Impala para llevar a cabo la misma extracción:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>impala-shell <span class="nt">-i</span> localhost:21000 <span class="nt">-f</span> query.sql <span class="nt">--quiet</span> <span class="nt">--print_header</span> <span class="nt">-B</span> <span class="nt">--output_delimiter</span><span class="o">=</span><span class="s1">','</span> <span class="nt">-o</span> informe.csv
+</code></pre></div></div>
+
+<h2 id="notas-finales">Notas finales</h2>
+
+<p>En este entrada se ha planteado un caso práctico en el que se ha descrito cómo realizar desde la shell una extracción a CSV de los resultados de una consulta sobre una tabla Hive. Para ello se ha mostrado cómo utilizar la interfaz de comandos Beeline presente en cualquier distribución así como Impala disponible en Cloudera.</p>
+
+
+    
+    
+  </article>
+</main>
+
+
+<footer>
+     <span></span> 
+    <a href="/2018/04/02/como-crear-un-proyecto-scala-con-maven/">Cómo crear un proyecto Scala con Maven »</a>
+</footer>
+
